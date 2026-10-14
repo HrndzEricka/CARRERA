@@ -217,6 +217,21 @@ code{background:var(--deep);border-radius:6px;padding:1px 6px;font-size:14px}
 .dblSplash p{font-weight:800;font-size:clamp(16px,2.6vw,24px);color:var(--chalk)}
 .dblSplash .bolt{font-size:clamp(40px,8vw,80px);animation:pulse .5s ease-in-out infinite}
 @keyframes zoomIn{from{transform:scale(.3);opacity:0}to{transform:none;opacity:1}}
+.picker{display:flex;flex-direction:column;gap:12px;width:100%}
+.picker h3{font-size:18px;text-align:center}
+.pickRow{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.pickRow button{padding:6px 2px;border-radius:12px;background:var(--deep);border:3px solid transparent}
+.pickRow button[aria-pressed="true"]{border-color:var(--a2);background:#2a3a63}
+.pickRow .car{width:100%;height:auto;aspect-ratio:2/1}
+.swatches{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+.swatches button{aspect-ratio:1;border-radius:50%;padding:0;border:3px solid var(--deep);min-width:0}
+.swatches button[aria-pressed="true"]{border-color:var(--chalk);box-shadow:0 0 0 3px var(--a2)}
+.person .car{width:44px;height:22px}
+.fast{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;background:linear-gradient(90deg,rgba(224,168,30,.18),rgba(224,168,30,.05));border:2px solid var(--a2);border-radius:14px;padding:10px 14px;font-weight:900;font-size:clamp(16px,2.4vw,24px);text-align:center}
+.fast .car{width:64px;height:32px}
+.fast b{color:var(--a2)}
+.lane.bluff .rn{animation:bluff .5s ease-in-out 3}
+@keyframes bluff{50%{background:var(--a2);color:var(--ink)}}
 .confetti{position:fixed;inset:0;pointer-events:none;z-index:60}
 @keyframes vroom{50%{transform:translateY(-1.5px)}}
 .runner .rn{position:absolute;top:50%;transform:translateY(-50%);left:calc(100% + 6px);white-space:nowrap;font-weight:800;font-size:15px;background:rgba(11,18,34,.8);color:var(--chalk);padding:2px 9px;border-radius:999px;max-width:13em;overflow:hidden;text-overflow:ellipsis}
@@ -762,9 +777,16 @@ const CAR_TYPES = [
 ];
 // cada jugador: color = su número de entrada y el modelo va cambiando, así no se repiten (hasta 40 distintos)
 function carSVG(i){
+  if(i && typeof i === "object") return carSVG.pick((+i.t || 0) % CAR_TYPES.length, (+i.c || 0) % 8);
   const color = i % 8, type = (i + Math.floor(i / 8)) % CAR_TYPES.length;
-  return `<svg class="car c${color}" viewBox="0 0 80 40" aria-hidden="true">${CAR_TYPES[type]}</svg>`;
+  return carSVG.pick(type, color);
 }
+carSVG.pick = (type, color) => {
+  return `<svg class="car c${color}" viewBox="0 0 80 40" aria-hidden="true">${CAR_TYPES[type]}</svg>`;
+};
+// el carro por defecto de cada jugador según su orden de entrada
+const defaultCar = i => ({ t:(i + Math.floor(i / 8)) % CAR_TYPES.length, c:i % 8 });
+const cleanCar = c => (c && typeof c === "object" && Number.isInteger(+c.t) && Number.isInteger(+c.c)) ? { t:Math.abs(+c.t) % 5, c:Math.abs(+c.c) % 8 } : null;
 
 function raceScale(list, qn, nq, final){
   const lead = Math.max(1, ...list.map(p => p.total));
@@ -782,13 +804,13 @@ function raceHTML(list, opts){
       if(o.final) return `<div class="lane ${o.me === p.name ? "me" : ""}" data-rank="${k}">
         <span class="pos"></span>
         <div class="track"><div class="runner ${k < 3 ? "flip" : ""}" style="--x:0">
-          ${carSVG(p.color ?? k)}<span class="rn">${esc(p.name)}${o.me === p.name ? " (usted)" : ""}</span></div></div>
+          ${carSVG(p.car || (p.color ?? k))}<span class="rn">${esc(p.name)}${o.me === p.name ? " (usted)" : ""}</span></div></div>
         <span class="lpts">${p.total}</span>
       </div>`;
       return `<div class="lane ${o.me === p.name ? "me" : ""}">
         <span class="pos">${(k+1) + "°"}</span>
         <div class="track"><div class="runner ${to > .6 ? "flip" : ""}" style="--x:${from.toFixed(4)}" data-to="${to.toFixed(4)}">
-          ${carSVG(p.color ?? k)}<span class="rn">${esc(p.name)}${o.me === p.name ? " (usted)" : ""}</span></div></div>
+          ${carSVG(p.car || (p.color ?? k))}<span class="rn">${esc(p.name)}${o.me === p.name ? " (usted)" : ""}</span></div></div>
         <span class="lpts">${p.total}${p.pts ? `<small>+${p.pts}</small>` : ""}</span>
       </div>`;
     }).join("")}
@@ -843,7 +865,7 @@ function podiumHTML(list, me){
   const order = [1,0,2].filter(k => list[k]);
   return `<div class="podium" id="finPodium" hidden>${order.map(k => `<div class="pstep p${k+1} ${me && list[k].name === me ? "me" : ""}">
       <span class="medal">${MEDALS[k]}</span>
-      ${carSVG(list[k].color ?? k)}
+      ${carSVG(list[k].car || (list[k].color ?? k))}
       <span class="name">${esc(list[k].name)}</span>
       <small>${list[k].total} pts</small>
       <div class="block">${k+1}</div>
@@ -870,12 +892,29 @@ function raceGo(done){
   requestAnimationFrame(() => requestAnimationFrame(() => {
     const fin = document.querySelector(".race.final");
     if(fin){ raceFinale(fin, done); const me0 = document.querySelector(".lane.me"); if(me0 && me0.scrollIntoView) me0.scrollIntoView({ block:"nearest" }); return; }
-    document.querySelectorAll(".runner[data-to]").forEach(r => {
-      if(r.style.getPropertyValue("--x") !== r.dataset.to){ r.classList.add("moving"); r.addEventListener("transitionend", () => r.classList.remove("moving"), { once:true }); }
-      r.style.setProperty("--x", r.dataset.to);
-    });
+    raceBluff([...document.querySelectorAll(".race:not(.final) .runner[data-to]")]);
     const me = document.querySelector(".lane.me"); if(me && me.scrollIntoView) me.scrollIntoView({ block:"nearest" });
   }));
+}
+// marcador con engaño: un carro de atrás arranca y pasa a todos… pero al final cada uno queda en su lugar real
+function raceBluff(runners){
+  if(!runners.length) return;
+  const L = x => `calc((100% - var(--carw)) * ${x})`;
+  const info = runners.map(r => ({ r, from:+r.style.getPropertyValue("--x") || 0, to:+r.dataset.to }));
+  const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const moved = info.some(i => Math.abs(i.to - i.from) > .002);
+  if(reduce || !moved || !runners[0].animate){ info.forEach(i => i.r.style.setProperty("--x", i.to)); return; }
+  const lead = Math.max(...info.map(i => i.to));
+  // el que engaña: alguien del 2° al 4° lugar (los carriles ya vienen ordenados por puesto)
+  const b = info.length > 1 ? 1 + Math.floor(Math.random() * Math.min(3, info.length - 1)) : -1;
+  if(b > 0) info[b].r.closest(".lane").classList.add("bluff");
+  info.forEach((it, k) => {
+    const d = it.to - it.from;
+    const mid = k === b ? Math.min(1, Math.max(it.to, lead) + .07) : (k === 0 && b > 0 ? it.from + d * .3 : it.from + d * .6);
+    it.r.style.transition = "none"; it.r.classList.add("moving");
+    const a = it.r.animate([{ left:L(it.from) }, { left:L(mid), offset:.5 }, { left:L(it.to) }], { duration:3000, easing:"ease-in-out", fill:"forwards" });
+    a.onfinish = () => { it.r.style.setProperty("--x", it.to); it.r.classList.remove("moving"); };
+  });
 }
 // color fijo por jugador (según el orden en que entró), para reconocer la ficha
 function colorIndex(name, names){ const i = names.indexOf(name); return i < 0 ? 0 : i; }
@@ -937,7 +976,8 @@ function connFor(cid){ if(!H.fbConns[cid]) H.fbConns[cid] = new FbConn(H.s.code,
 function hStateMsg(){
   const s = H.s, q = s.qs[s.qi];
   const m = { t:"state", game:GAME, phase:s.phase, qn:s.qi+1, nq:s.qs.length,
-    players: Object.values(s.players).map(p => ({ name:p.name, total:p.total, online:isOn(p), pts:(p.last && p.last.qn === s.qi+1) ? p.last.pts : 0 })) };
+    players: Object.values(s.players).map(p => ({ name:p.name, total:p.total, online:isOn(p), pts:(p.last && p.last.qn === s.qi+1) ? p.last.pts : 0, car:p.car || null })) };
+  if(s.fast && (s.phase === "reveal" || s.phase === "board") && s.fast.qn === s.qi+1) m.fast = s.fast;
   if(q && s.phase !== "lobby" && s.phase !== "end"){
     m.q = q.q; m.texts = q.a; m.dur = s.dur; m.double = !!q.double;
     m.remaining = Math.max(0, s.dur - (Date.now() - s.startedAt)/1000);
@@ -964,6 +1004,7 @@ function hOnData(c, d){
         const taken = new Set(Object.values(s.players).map(x => x.name.toLowerCase()));
         let nm = name, k = 2; while(taken.has(nm.toLowerCase())) nm = name + " " + (k++);
         p = s.players[cid] = { name:nm, total:0, streak:0 };
+        p.car = cleanCar(d.car) || defaultCar(Object.keys(s.players).length - 1);
         beep(700,90);
       }
     }
@@ -982,6 +1023,7 @@ function hOnData(c, d){
   const wasOn = isOn(p); p.seen = Date.now(); p.lastAt = Date.now();
   if(!wasOn){ hRenderPeople(); hBroadcast(); }
   if(d.t === "ping") return;
+  if(d.t === "car"){ const c = cleanCar(d.car); if(c){ p.car = c; hSave(); hRenderPeople(); hBroadcast(); } return; }
   if(d.t === "answer"){
     const q = s.qs[s.qi];
     if(s.phase !== "question" || d.qn !== s.qi+1 || !q) return;
@@ -1026,7 +1068,7 @@ function hNext(){
 const DBL_INTRO = 3200;
 function hResultMsg(cid){
   const s = H.s, p = s.players[cid], q = s.qs[s.qi], r = ranked(), rank = r.findIndex(x => x.id === cid) + 1;
-  return { t:"result", ...p.last, total:p.total, rank, of:r.length, correct:q.c, correctText:q.a[q.c] };
+  return { t:"result", ...p.last, total:p.total, rank, of:r.length, correct:q.c, correctText:q.a[q.c], fast:s.fast || null };
 }
 function hReveal(){
   const s = H.s; if(s.phase !== "question") return;
@@ -1040,6 +1082,9 @@ function hReveal(){
     p.total += pts;
     p.last = { qn:s.qi+1, ok, pts, double:!!q.double, choice:a ? a.c : -1, answered:!!a, streak:p.streak };
   });
+  // el más rápido entre los que acertaron
+  const fastId = Object.keys(s.ans).filter(id => s.ans[id].c === q.c && s.players[id]).sort((a,b) => s.ans[a].ms - s.ans[b].ms)[0];
+  s.fast = fastId ? { qn:s.qi+1, name:s.players[fastId].name, sec:+(s.ans[fastId].ms/1000).toFixed(1), car:s.players[fastId].car || null } : null;
   s.phase = "reveal"; hSave(); hBroadcast(); hRender();
   beep(520,110); setTimeout(()=>beep(780,220),120);
   onlineIds().forEach(cid => connFor(cid).send(hResultMsg(cid)));
@@ -1047,7 +1092,7 @@ function hReveal(){
 function hBoard(){ H.s.phase = "board"; hSave(); hBroadcast(); hRender(); }
 function hEnd(){
   const s = H.s; s.phase = "end";
-  s.podium = ranked().map(p => ({ name:p.name, total:p.total }));
+  s.podium = ranked().map(p => ({ name:p.name, total:p.total, car:p.car || null }));
   hSave(); hBroadcast(); hRender();
   onlineIds().forEach(cid => connFor(cid).send({ t:"podium", list:s.podium, me:s.players[cid].name }));
 }
@@ -1260,6 +1305,7 @@ function hGame(){
     const right = counts[q.c];
     body = `
     <div class="bar">Pregunta ${s.qi+1} de ${s.qs.length}<span class="spacer"></span><span class="count">${right} de ${Object.keys(s.players).length} acertaron</span></div>
+    ${s.fast && s.fast.qn === s.qi+1 ? `<div class="fast">⚡ El más rápido: ${carSVG(s.fast.car || 0)}<b>${esc(s.fast.name)}</b> en ${s.fast.sec} s</div>` : ""}
     <div class="qtext">${esc(q.q)}</div>
     <div class="answers">${q.a.map((o,j) => o.trim() ? `<div class="ans a${j} ${j===q.c?"win":"dim"}">${SHAPES[j]}<span class="txt">${esc(o)}${j===q.c?" ✔":""}</span><span class="n">${counts[j]}</span></div>` : "").join("")}</div>
     <div class="row center"><button class="go" id="toBoard" style="font-size:20px;padding:14px 26px">Ver marcador →</button></div>
@@ -1267,7 +1313,7 @@ function hGame(){
   } else if(s.phase === "board"){
     const last = s.qi >= s.qs.length - 1;
     const names = Object.values(s.players).map(p => p.name);
-    const r = ranked().map(p => ({ name:p.name, total:p.total, pts:(p.last && p.last.qn === s.qi+1) ? p.last.pts : 0, color:colorIndex(p.name, names) }));
+    const r = ranked().map(p => ({ name:p.name, total:p.total, pts:(p.last && p.last.qn === s.qi+1) ? p.last.pts : 0, color:colorIndex(p.name, names), car:p.car }));
     body = `
     <div class="row"><h2 class="big">La carrera</h2><span class="spacer"></span><span class="hint" style="font-size:16px">Después de la pregunta ${s.qi+1} de ${s.qs.length}</span></div>
     ${r.length ? `<div class="raceWrap">${raceHTML(r, { scale:raceScale(r, s.qi+1, s.qs.length) })}</div>` : '<p class="center hint">Todavía no hay jugadores.</p>'}
@@ -1305,7 +1351,7 @@ function hRenderPeople(){
   const box = $("people"); if(!box) return;
   const list = Object.entries(H.s.players);
   $("pplCount").textContent = list.length === 1 ? "1 jugador" : list.length + " jugadores";
-  box.innerHTML = list.length ? list.map(([id,p]) => `<span class="person"><span class="dot ${isOn(p)?"":"off"}"></span>${esc(p.name)}<button data-id="${esc(id)}" aria-label="Sacar a ${esc(p.name)}" title="Sacar del juego">✕</button></span>`).join("")
+  box.innerHTML = list.length ? list.map(([id,p]) => `<span class="person"><span class="dot ${isOn(p)?"":"off"}"></span>${carSVG(p.car || 0)}${esc(p.name)}<button data-id="${esc(id)}" aria-label="Sacar a ${esc(p.name)}" title="Sacar del juego">✕</button></span>`).join("")
     : `<p class="hint" style="font-size:18px">Esperando jugadores…</p>`;
   box.onclick = e => { const b = e.target.closest("button[data-id]"); if(b) hKick(b.dataset.id); };
 }
@@ -1453,7 +1499,8 @@ function sStart(){
 function sConnect(){
   if(!S.room) return;
   S.attempts++;
-  sSend({ t:"join", name:S.name, cid:S.cid });
+  if(!S.car){ const c = ls.get("quiz_car", null); if(c) S.car = c; }
+  sSend({ t:"join", name:S.name, cid:S.cid, car:S.car || null });
   clearTimeout(S.openT);
   S.openT = setTimeout(() => {
     if(S.joined) return;
@@ -1482,7 +1529,7 @@ function sOnData(d){
 function sOnState(d){
   if(d.game !== GAME) return;
   const mine = (d.players||[]).find(p => p.name === S.name);
-  if(d.phase === "lobby"){ S.result = null; S.sent = {}; S.got = {}; sWait(); return; }
+  if(d.phase === "lobby"){ S.result = null; S.sent = {}; S.got = {}; if(!$("waitView") || (!S.car && !S.carShown && sMyCar())){ S.carShown = !!sMyCar(); sWait(); } return; }
   if(d.phase === "question"){
     S.endsAt = Date.now() + (d.remaining||0)*1000; S.dur = d.dur || 20;
     const isNew = S.qn !== d.qn; S.qn = d.qn;
@@ -1504,11 +1551,36 @@ function sOnState(d){
   }
 }
 function sHead(){ return `<div class="sHead"><span class="dot"></span><span style="overflow-wrap:anywhere">${esc(S.name)}</span><span class="spacer"></span><span class="muted">PIN ${esc(S.code)}</span></div>`; }
+// mientras esperan, cada uno arma su carro (modelo y color)
+const CAR_COLORS = ["#e8553f","#2f8fd6","#e0a81e","#2e9e6b","#b07ad9","#f08bb4","#5fc9d6","#f3efe4"];
+const CAR_NAMES = ["De carreras","Sedán","4x4","Buseta","Escarabajo"];
+const COLOR_NAMES = ["Rojo","Azul","Amarillo","Verde","Morado","Rosado","Celeste","Blanco"];
+function sMyCar(){
+  if(S.car) return S.car;
+  const me = ((S.st && S.st.players) || []).find(p => p.name === S.name);
+  return (me && me.car) || null;
+}
 function sWait(){
   clearInterval(S.tick);
-  app.innerHTML = `<div class="phone">${sHead()}
-    <div class="hello box"><p class="muted" style="font-weight:800">¡Ya está dentro!</p><p class="me">${esc(S.name)}</p>
-      ${(() => { const names = ((S.st && S.st.players) || []).map(p => p.name), i = names.indexOf(S.name); return i >= 0 ? `<div class="myCar">${carSVG(i)}<span class="muted" style="font-weight:800">Este es su carro</span></div>` : ""; })()}<p>Espere a que la profe empiece el juego. Todo va a salir aquí en su celular.</p></div></div>`;
+  const car = sMyCar() || { t:0, c:0 };
+  app.innerHTML = `<div class="phone" id="waitView">${sHead()}
+    <div class="hello box" style="padding-block:20px"><p class="muted" style="font-weight:800">¡Ya está dentro!</p><p class="me">${esc(S.name)}</p>
+      <div class="myCar" id="myCar">${carSVG(car)}</div>
+      <div class="picker">
+        <h3>Arme su carro</h3>
+        <div class="pickRow" id="pickModel">${CAR_NAMES.map((n,t) => `<button data-t="${t}" aria-pressed="${car.t===t}" aria-label="${n}" title="${n}">${carSVG({ t, c:car.c })}</button>`).join("")}</div>
+        <div class="swatches" id="pickColor">${CAR_COLORS.map((col,c) => `<button data-c="${c}" aria-pressed="${car.c===c}" style="background:${col}" aria-label="${COLOR_NAMES[c]}" title="${COLOR_NAMES[c]}"></button>`).join("")}</div>
+      </div>
+      <p>Espere a que la profe empiece el juego. Todo va a salir aquí en su celular.</p></div></div>`;
+  const set = ch => {
+    S.car = { ...(sMyCar() || { t:0, c:0 }), ...ch }; ls.set("quiz_car", S.car);
+    sSend({ t:"car", car:S.car }); beep(880,50);
+    $("myCar").innerHTML = carSVG(S.car);
+    $("pickModel").querySelectorAll("button").forEach(b => { b.setAttribute("aria-pressed", +b.dataset.t === S.car.t); b.innerHTML = carSVG({ t:+b.dataset.t, c:S.car.c }); });
+    $("pickColor").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.c === S.car.c));
+  };
+  $("pickModel").onclick = e => { const b = e.target.closest("button[data-t]"); if(b) set({ t:+b.dataset.t }); };
+  $("pickColor").onclick = e => { const b = e.target.closest("button[data-c]"); if(b) set({ c:+b.dataset.c }); };
 }
 function sPadView(d){
   const introMs = d.double ? ((d.remaining||0) - (d.dur||0)) * 1000 : 0;
@@ -1567,6 +1639,7 @@ function sResultView(){
       <h2>${r.ok ? "¡Correcto!" : (r.answered ? "Incorrecto" : "Se acabó el tiempo")}</h2>
       ${r.ok ? `<p class="plus">+${r.pts}${r.double ? " ⚡ doble" : ""}</p>${r.streak >= 3 ? `<p style="font-weight:900">🔥 Racha de ${r.streak} (+100)</p>` : ""}` : `<p style="font-weight:800;overflow-wrap:anywhere">La correcta era: ${esc(r.correctText)}</p>`}
     </div>
+    ${r.fast ? (r.fast.name === S.name ? `<div class="fast">⚡ ¡Usted fue el más rápido! (${r.fast.sec} s)</div>` : `<div class="fast">⚡ El más rápido: <b>${esc(r.fast.name)}</b> en ${r.fast.sec} s</div>`) : ""}
     ${sAnswerKey(r.correct, r.choice)}
     <div class="box">
       <div class="stat"><span>Puntos</span><b>${r.total}</b></div>
@@ -1594,7 +1667,7 @@ function sAnswerKey(correct, choice){
 function sRaceList(d){
   const names = (d.players||[]).map(p => p.name);
   return (d.players||[]).slice().sort((a,b) => b.total - a.total || a.name.localeCompare(b.name))
-    .map(p => ({ name:p.name, total:p.total, pts:p.pts||0, color:colorIndex(p.name, names) }));
+    .map(p => ({ name:p.name, total:p.total, pts:p.pts||0, color:colorIndex(p.name, names), car:p.car }));
 }
 function sBoardView(d){
   const list = sRaceList(d), me = list.findIndex(p => p.name === S.name);
@@ -1609,7 +1682,7 @@ function sBoardView(d){
 function sPodiumView(d){
   clearInterval(S.tick);
   const st = S.st || {}, names = (st.players||[]).map(p => p.name);
-  const list = (d.list || []).map(p => ({ name:p.name, total:p.total, color:colorIndex(p.name, names) }));
+  const list = (d.list || []).map(p => ({ name:p.name, total:p.total, color:colorIndex(p.name, names), car:p.car }));
   const i = list.findIndex(p => p.name === (d.me || S.name)), pos = i + 1;
   app.innerHTML = `<div class="phone" id="podView">${sHead()}
     <h2 class="finTitle" style="font-size:28px;text-align:center">🏁 ¡La gran final!</h2>
