@@ -135,6 +135,8 @@ code{background:var(--deep);border-radius:6px;padding:1px 6px;font-size:14px}
 .lane{display:grid;grid-template-columns:2.8em minmax(0,1fr) 5.2em;gap:10px;align-items:center}
 .lane .pos{font-family:var(--display);font-weight:800;font-size:20px;color:var(--a2);text-align:right;font-variant-numeric:tabular-nums}
 .lane .lpts{font-family:var(--display);font-weight:800;font-size:18px;text-align:right;font-variant-numeric:tabular-nums;line-height:1.05}
+.race .pos,.race .lpts{transition:opacity .5s}
+.race.running .pos,.race.running .lpts{opacity:0}
 .lane .lpts small{display:block;font-family:var(--body);font-size:12px;color:var(--good)}
 .track{position:relative;height:44px;border-radius:12px;background:#283247;border-top:3px solid #3d4a66;border-bottom:3px solid #3d4a66}
 .track::before{content:"";position:absolute;left:10px;right:20px;top:50%;height:2px;margin-top:-1px;background:repeating-linear-gradient(90deg,rgba(243,239,228,.45) 0 14px,transparent 14px 28px)}
@@ -143,7 +145,7 @@ code{background:var(--deep);border-radius:6px;padding:1px 6px;font-size:14px}
 .runner{position:absolute;top:50%;left:calc((100% - var(--carw)) * var(--x,0));transform:translateY(-50%);transition:left 1.8s cubic-bezier(.2,.8,.2,1)}
 .final .runner{transition-duration:3s}
 .car{width:64px;height:32px;display:block;filter:drop-shadow(0 2px 2px rgba(0,0,0,.45))}
-.car.c0{color:#e8553f}.car.c1{color:#2f8fd6}.car.c2{color:#e0a81e}.car.c3{color:#2e9e6b}.car.c4{color:#b07ad9}.car.c5{color:#f08bb4}.car.c6{color:#5fc9d6}.car.c7{color:#f3efe4}
+.car.c0{color:#e8553f}.car.c1{color:#2f8fd6}.car.c2{color:#e0a81e}.car.c3{color:#2e9e6b}.car.c4{color:#b07ad9}.car.c5{color:#f08bb4}.car.c6{color:#5fc9d6}.car.c7{color:#f3efe4}.car.c8{color:#f28c28}.car.c9{color:#aeb8cc}.car.c10{color:#a8325a}.car.c11{color:#8fd14f}
 .runner.moving .car{animation:vroom .18s linear infinite}
 .car .wh{transform-box:fill-box;transform-origin:center}
 .runner.moving .car .wh{animation:spin .35s linear infinite}
@@ -219,11 +221,11 @@ code{background:var(--deep);border-radius:6px;padding:1px 6px;font-size:14px}
 @keyframes zoomIn{from{transform:scale(.3);opacity:0}to{transform:none;opacity:1}}
 .picker{display:flex;flex-direction:column;gap:12px;width:100%}
 .picker h3{font-size:18px;text-align:center}
-.pickRow{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.pickRow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .pickRow button{padding:6px 2px;border-radius:12px;background:var(--deep);border:3px solid transparent}
 .pickRow button[aria-pressed="true"]{border-color:var(--a2);background:#2a3a63}
 .pickRow .car{width:100%;height:auto;aspect-ratio:2/1}
-.swatches{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+.swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;max-width:300px;margin:0 auto;width:100%}
 .swatches button{aspect-ratio:1;border-radius:50%;padding:0;border:3px solid var(--deep);min-width:0}
 .swatches button[aria-pressed="true"]{border-color:var(--chalk);box-shadow:0 0 0 3px var(--a2)}
 .person .car{width:44px;height:22px}
@@ -773,20 +775,85 @@ const CAR_TYPES = [
    ${GLASS("M22.5 20 Q26.5 12.4 36.5 11.6 L38.2 11.6 L38.2 20 Z")}${GLASS("M40 11.6 Q51.5 12.2 57.5 20 L40 20 Z")}
    <path d="M27 17 Q29 14 33 13.2" stroke="#fff" stroke-opacity=".55" stroke-width="1" fill="none"/>
    <path d="M39 20 V29" stroke="#000" stroke-opacity=".25" stroke-width=".8"/><rect x="42" y="22" width="3.5" height="1.2" rx=".6" fill="#000" opacity=".3"/>
-   ${SHINE("M24 13 Q32 9.8 44 10")}${HEAD(73.5, 24.5)}${TAIL(6.2, 23)}` + WHEEL(20, 6.4) + WHEEL(60, 6.4)
+   ${SHINE("M24 13 Q32 9.8 44 10")}${HEAD(73.5, 24.5)}${TAIL(6.2, 23)}` + WHEEL(20, 6.4) + WHEEL(60, 6.4),
+  // 6. moto deportiva con piloto
+  SHADOW + `<rect x="7" y="25.5" width="12" height="2.6" rx="1.2" fill="#8b93a1"/>
+   <path d="M64 31 L59 17" stroke="#8b93a1" stroke-width="2.2"/>
+   <path d="M14 28 L24 20 L40 18.5 L52 12.5 L62 14 L70 22 L66 26 L50 26 L44 30 L26 30 Z" fill="currentColor"/>
+   ${LOWER("M16 27 L66 26 L50 26 L44 30 L26 30 Z")}
+   <path d="M56 12.4 L62 10 L64.5 16 L58 15 Z" fill="#9fd3ee"/>
+   <path d="M27 18.5 Q29 9 39 8.6 L47 11 L44 17.5 L33 19.6 Z" fill="#2a2f3a"/><path d="M33 19 L28 26 L31 27 L37 20 Z" fill="#2a2f3a"/>
+   <circle cx="44.5" cy="7.4" r="5.2" fill="#f3efe4"/><path d="M45.5 5.4 Q49.8 5.6 49.6 8.6 L45.5 8.8 Z" fill="#1b2433"/><path d="M40 6 Q42 3 46 3" stroke="currentColor" stroke-width="1.6" fill="none"/>
+   ${SHINE("M26 22 L50 19")}${HEAD(69, 21.5)}${TAIL(13.5, 25)}` + WHEEL(16, 7) + WHEEL(64, 7),
+  // 7. scooter
+  SHADOW + `<path d="M60 26 L56.5 10" stroke="#8b93a1" stroke-width="2.2"/><rect x="51" y="8" width="11" height="2.4" rx="1.2" fill="#2a2f3a"/>
+   <path d="M9 30 Q7 19.5 18 18.6 L33 18.6 Q37 25.5 46 25.5 L53 25.5 L55.6 11 L59 11 L58.5 25.5 Q67 25.8 68.5 30 Z" fill="currentColor"/>
+   ${LOWER("M9 28 L68.5 28 Q68.6 29 68.5 30 L9 30 Z")}
+   <rect x="11" y="14.6" width="21" height="4.4" rx="2.2" fill="#1b2433"/><rect x="3" y="17" width="7" height="5" rx="1.5" fill="#2a2f3a"/>
+   ${SHINE("M12 21 Q16 19.6 26 19.8")}<circle cx="58.5" cy="13.5" r="1.6" fill="#fff6c2"/>${TAIL(8.4, 21)}` + WHEEL(18, 5.6) + WHEEL(62, 5.6),
+  // 8. Fórmula 1
+  SHADOW + `<rect x="7.5" y="14" width="2.2" height="9" fill="#22262e"/><rect x="2" y="11.5" width="11" height="3.4" rx="1" fill="currentColor"/>
+   <path d="M4 26 L12 22 L30 21 L36 15.4 L46 15.4 L50 21 L76 24 L76 27 L4 28 Z" fill="currentColor"/>
+   ${LOWER("M4 26 L76 25.6 L76 27 L4 28 Z")}
+   <rect x="65" y="27" width="13" height="2.6" rx="1" fill="currentColor"/><rect x="68" y="25" width="2" height="3" fill="#22262e"/>
+   <circle cx="41" cy="15.6" r="3.8" fill="#ffe27a"/><path d="M41.5 13.8 Q45 14 44.8 16.3 L41.5 16.4 Z" fill="#1b2433"/>
+   <path d="M35 15.4 Q41 9.6 47 15.4" stroke="#2a2f3a" stroke-width="1.4" fill="none"/>
+   <path d="M14 23.6 L74 25" stroke="#fff" stroke-width="1.8" opacity=".85"/><circle cx="24" cy="24.4" r="2.8" fill="#fff"/><circle cx="24" cy="24.4" r="1.6" fill="currentColor"/>
+   ${TAIL(4, 23)}` + WHEEL(18, 7) + WHEEL(62, 6.6),
+  // 9. monster truck
+  SHADOW + `<path d="M20 22 L26 18 M62 22 L56 18" stroke="#2a2f3a" stroke-width="2.2"/>
+   <path d="M8 18.5 L8 12 Q8 10 10 10 L40 10 L46 3 L60 3 L66 10 L74 12 Q76 13 76 16 L76 20 Q76 21.5 74 21.5 L10 21.5 Q8 21.5 8 20 Z" fill="currentColor"/>
+   ${LOWER("M8 17.5 L76 17.5 L76 20 Q76 21.5 74 21.5 L10 21.5 Q8 21.5 8 20 Z")}
+   ${GLASS("M48 5 L58.5 5 L63 10 L47 10 Z")}<path d="M50 6.4 L53 6.4 L50 9.4" stroke="#fff" stroke-opacity=".55" stroke-width="1" fill="none"/>
+   <path d="M12 14 L36 14" stroke="#fff" stroke-width="2" opacity=".7"/><path d="M14 16.4 L22 11.6 M24 16.4 L32 11.6" stroke="#ffe27a" stroke-width="1.6"/>
+   ${SHINE("M46 4.2 L60 4.2")}${HEAD(74.5, 14.5)}${TAIL(8.2, 12)}` + WHEEL(20, 9) + WHEEL(62, 9),
+  // 10. camión
+  SHADOW + `<rect x="2" y="4" width="50" height="22" rx="2" fill="#e8e3d8"/><rect x="2" y="15" width="50" height="4" fill="currentColor"/>
+   <path d="M2 6 H52" stroke="#000" stroke-opacity=".12" stroke-width="2"/><path d="M14 4 V26 M27 4 V26 M40 4 V26" stroke="#000" stroke-opacity=".1" stroke-width="1"/>
+   <path d="M54 10 L66 10 L74 18 L76.5 21.5 L76.5 28 L54 28 Z" fill="currentColor"/>
+   ${LOWER("M54 25 L76.5 25 L76.5 28 L54 28 Z")}
+   ${GLASS("M57 12.4 L65 12.4 L71 19 L57 19 Z")}<rect x="2" y="26" width="74.5" height="3" fill="#2a2f3a"/>
+   ${HEAD(74.6, 23.4)}${TAIL(2, 21)}` + WHEEL(13, 5.4) + WHEEL(27, 5.4) + WHEEL(66, 5.6),
+  // 11. jeep descapotable
+  SHADOW + `<circle cx="3.6" cy="21.5" r="4.4" fill="#16191f"/><circle cx="3.6" cy="21.5" r="2" fill="#5b6270"/>
+   <path d="M18 18 L20.5 8 L34 8 L36.5 18" stroke="#2a2f3a" stroke-width="2.4" fill="none"/>
+   <circle cx="42" cy="12.6" r="3.6" fill="#c98a5a"/><path d="M38.6 11.6 Q42 7 45.6 11.2" fill="#2a2f3a"/>
+   <path d="M56.5 14 L59 6" stroke="#9fd3ee" stroke-width="2.4"/>
+   <path d="M5 28 L5 18 L53 18 L56 14.5 L60.5 14.5 L62 18 L74 19 Q77 20 77 23 L77 28 Q77 30 75 30 L7 30 Q5 30 5 28 Z" fill="currentColor"/>
+   ${LOWER("M5 25.5 L77 25.5 L77 28 Q77 30 75 30 L7 30 Q5 30 5 28 Z")}
+   <rect x="74" y="24" width="5" height="4" rx="1" fill="#2a2f3a"/><path d="M40 18 V28" stroke="#000" stroke-opacity=".25" stroke-width=".8"/>
+   ${SHINE("M7 19.6 L72 20.2")}${HEAD(74.4, 21.6)}${TAIL(5, 20)}` + WHEEL(18, 7) + WHEEL(62, 7),
+  // 12. cuadraciclo: llantas con tacos, guardabarros separados, chasis abierto, parrillas y piloto sentado
+  SHADOW + `<circle cx="20" cy="31" r="8.6" fill="none" stroke="#16191f" stroke-width="2.4" stroke-dasharray="1.8 1.5"/><circle cx="60" cy="31" r="8.6" fill="none" stroke="#16191f" stroke-width="2.4" stroke-dasharray="1.8 1.5"/>
+   <path d="M20 31 L40 24.5 L60 31" stroke="#6b7383" stroke-width="2.4" fill="none"/><rect x="34" y="20.5" width="12" height="7" rx="1.6" fill="#3a404c"/><rect x="36" y="22.4" width="8" height="1.2" fill="#8b93a1"/>
+   <path d="M44 27 L49 28" stroke="#2a2f3a" stroke-width="2"/>
+   <path d="M38.5 13 Q37.6 6 42 5.4 L45 5.8 Q47.2 9.4 46.4 13 Z" fill="#d9dde5"/>
+   <path d="M44.6 8 L53 9.4" stroke="#aeb5c2" stroke-width="2.4" stroke-linecap="round"/>
+   <path d="M40.5 13.4 L45 18.6 L49 20.2" stroke="#5b7fb0" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+   <circle cx="43.4" cy="3.6" r="3.4" fill="currentColor"/><path d="M40.2 3 Q43 1.2 46.4 2.4" stroke="#fff" stroke-width="1" fill="none" opacity=".8"/><path d="M44.3 2 Q47.2 2.2 47 4.4 L44.3 4.6 Z" fill="#1b2433"/>
+   <path d="M53 19 L55 9.2" stroke="#9aa2b0" stroke-width="2.2"/><path d="M52 9.2 L58.6 8.2" stroke="#c9ced8" stroke-width="2.2" stroke-linecap="round"/>
+   <rect x="7" y="11.4" width="14" height="1.8" rx=".9" fill="#9aa2b0"/><path d="M9 13 V15.6 M19 13 V15.6" stroke="#9aa2b0" stroke-width="1.4"/>
+   <rect x="59" y="11.4" width="12.5" height="1.8" rx=".9" fill="#9aa2b0"/><path d="M61 13 V15.6 M70 13 V16.4" stroke="#9aa2b0" stroke-width="1.4"/>
+   <path d="M7.5 23.5 Q9.4 14.6 20 14.6 Q29 14.6 31.4 21 L31.4 23.5 L27.4 23.5 Q25.4 18.8 20 18.8 Q14.2 18.8 12.2 23.5 Z" fill="currentColor"/>
+   <path d="M48.6 21 Q51 14.6 60 14.6 Q70.6 14.6 72.5 23.5 L67.8 23.5 Q65.8 18.8 60 18.8 Q54.6 18.8 52.6 23.5 L48.6 23.5 Z" fill="currentColor"/>
+   <path d="M29 18.6 L52 18.6 L52 21.8 L29 21.8 Z" fill="currentColor"/>
+   <path d="M26 15.4 Q26.8 12.8 30 12.8 L44 12.8 Q46.4 12.8 46.4 15.4 L46.4 17.4 L26 17.4 Z" fill="#1b2433"/>
+   ${SHINE("M10 19.6 Q13 15.8 20 15.8")}${SHINE("M52 19.2 Q55 15.8 61 15.8")}
+   <ellipse cx="71" cy="19.6" rx="1.6" ry="1.2" fill="#fff6c2"/><ellipse cx="72" cy="19.6" rx="3" ry="1.8" fill="#fff3a0" opacity=".25"/>${TAIL(7.4, 19.2)}` + WHEEL(20, 7.2) + WHEEL(60, 7.2)
 ];
+const NCOL = 12; // cantidad de colores
 // cada jugador: color = su número de entrada y el modelo va cambiando, así no se repiten (hasta 40 distintos)
 function carSVG(i){
-  if(i && typeof i === "object") return carSVG.pick((+i.t || 0) % CAR_TYPES.length, (+i.c || 0) % 8);
-  const color = i % 8, type = (i + Math.floor(i / 8)) % CAR_TYPES.length;
+  if(i && typeof i === "object") return carSVG.pick((+i.t || 0) % CAR_TYPES.length, (+i.c || 0) % NCOL);
+  const color = i % NCOL, type = (i + Math.floor(i / 8)) % CAR_TYPES.length;
   return carSVG.pick(type, color);
 }
 carSVG.pick = (type, color) => {
   return `<svg class="car c${color}" viewBox="0 0 80 40" aria-hidden="true">${CAR_TYPES[type]}</svg>`;
 };
 // el carro por defecto de cada jugador según su orden de entrada
-const defaultCar = i => ({ t:(i + Math.floor(i / 8)) % CAR_TYPES.length, c:i % 8 });
-const cleanCar = c => (c && typeof c === "object" && Number.isInteger(+c.t) && Number.isInteger(+c.c)) ? { t:Math.abs(+c.t) % 5, c:Math.abs(+c.c) % 8 } : null;
+const defaultCar = i => ({ t:(i + Math.floor(i / NCOL)) % CAR_TYPES.length, c:i % NCOL });
+const cleanCar = c => (c && typeof c === "object" && Number.isInteger(+c.t) && Number.isInteger(+c.c)) ? { t:Math.abs(+c.t) % CAR_TYPES.length, c:Math.abs(+c.c) % NCOL } : null;
 
 function raceScale(list, qn, nq, final){
   const lead = Math.max(1, ...list.map(p => p.total));
@@ -808,7 +875,7 @@ function raceHTML(list, opts){
         <span class="lpts">${p.total}</span>
       </div>`;
       return `<div class="lane ${o.me === p.name ? "me" : ""}">
-        <span class="pos">${(k+1) + "°"}</span>
+        <span class="pos">${(p.rank ?? k+1) + "°"}</span>
         <div class="track"><div class="runner ${to > .6 ? "flip" : ""}" style="--x:${from.toFixed(4)}" data-to="${to.toFixed(4)}">
           ${carSVG(p.car || (p.color ?? k))}<span class="rn">${esc(p.name)}${o.me === p.name ? " (usted)" : ""}</span></div></div>
         <span class="lpts">${p.total}${p.pts ? `<small>+${p.pts}</small>` : ""}</span>
@@ -899,22 +966,34 @@ function raceGo(done){
 // marcador con engaño: un carro de atrás arranca y pasa a todos… pero al final cada uno queda en su lugar real
 function raceBluff(runners){
   if(!runners.length) return;
+  const race = runners[0].closest(".race");
+  const done = () => { if(race) race.classList.remove("running"); document.querySelectorAll("[data-after]").forEach(e => e.hidden = false); };
   const L = x => `calc((100% - var(--carw)) * ${x})`;
   const info = runners.map(r => ({ r, from:+r.style.getPropertyValue("--x") || 0, to:+r.dataset.to }));
   const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   const moved = info.some(i => Math.abs(i.to - i.from) > .002);
-  if(reduce || !moved || !runners[0].animate){ info.forEach(i => i.r.style.setProperty("--x", i.to)); return; }
+  if(reduce || !moved || !runners[0].animate){ info.forEach(i => i.r.style.setProperty("--x", i.to)); done(); return; }
+  if(race) race.classList.add("running");
+  const D = 3600;
   const lead = Math.max(...info.map(i => i.to));
-  // el que engaña: alguien del 2° al 4° lugar (los carriles ya vienen ordenados por puesto)
-  const b = info.length > 1 ? 1 + Math.floor(Math.random() * Math.min(3, info.length - 1)) : -1;
-  if(b > 0) info[b].r.closest(".lane").classList.add("bluff");
+  const leaderIdx = info.findIndex(i => i.to === lead);
+  // varios carros (más o menos un tercio) arrancan con todo y se adelantan al que va ganando
+  const others = info.map((_,k) => k).filter(k => k !== leaderIdx);
+  for(let i = others.length - 1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [others[i], others[j]] = [others[j], others[i]]; }
+  const nB = others.length <= 2 ? others.length : Math.min(5, Math.max(2, Math.round(others.length * .35)));
+  const bluff = new Set(others.slice(0, nB));
   info.forEach((it, k) => {
     const d = it.to - it.from;
-    const mid = k === b ? Math.min(1, Math.max(it.to, lead) + .07) : (k === 0 && b > 0 ? it.from + d * .3 : it.from + d * .6);
+    let m1, m2;
+    if(bluff.has(k)){ const extra = .04 + Math.random() * .08; m1 = Math.min(1, lead + extra); m2 = Math.min(1, lead + extra * .6); it.r.closest(".lane").classList.add("bluff"); }
+    else if(k === leaderIdx){ m1 = it.from + d * .25; m2 = it.from + d * .6; }   // el que gana arranca lento…
+    else { m1 = it.from + d * .55; m2 = it.from + d * .85; }
     it.r.style.transition = "none"; it.r.classList.add("moving");
-    const a = it.r.animate([{ left:L(it.from) }, { left:L(mid), offset:.5 }, { left:L(it.to) }], { duration:3000, easing:"ease-in-out", fill:"forwards" });
+    // …y en el último tramo los pasa a todos
+    const a = it.r.animate([{ left:L(it.from) }, { left:L(m1), offset:.45 }, { left:L(m2), offset:.75 }, { left:L(it.to) }], { duration:D, easing:"ease-in-out", fill:"forwards" });
     a.onfinish = () => { it.r.style.setProperty("--x", it.to); it.r.classList.remove("moving"); };
   });
+  setTimeout(done, D + 100);
 }
 // color fijo por jugador (según el orden en que entró), para reconocer la ficha
 function colorIndex(name, names){ const i = names.indexOf(name); return i < 0 ? 0 : i; }
@@ -1313,7 +1392,8 @@ function hGame(){
   } else if(s.phase === "board"){
     const last = s.qi >= s.qs.length - 1;
     const names = Object.values(s.players).map(p => p.name);
-    const r = ranked().map(p => ({ name:p.name, total:p.total, pts:(p.last && p.last.qn === s.qi+1) ? p.last.pts : 0, color:colorIndex(p.name, names), car:p.car }));
+    const r = ranked().map((p,k) => ({ name:p.name, total:p.total, pts:(p.last && p.last.qn === s.qi+1) ? p.last.pts : 0, color:colorIndex(p.name, names), car:p.car, rank:k+1 }))
+      .sort((a,b) => names.indexOf(a.name) - names.indexOf(b.name)); // carril fijo para cada uno
     body = `
     <div class="row"><h2 class="big">La carrera</h2><span class="spacer"></span><span class="hint" style="font-size:16px">Después de la pregunta ${s.qi+1} de ${s.qs.length}</span></div>
     ${r.length ? `<div class="raceWrap">${raceHTML(r, { scale:raceScale(r, s.qi+1, s.qs.length) })}</div>` : '<p class="center hint">Todavía no hay jugadores.</p>'}
@@ -1407,7 +1487,7 @@ function sHero(){
       <div class="rcar l1" style="left:12%;--d:4.6s;--dl:-1.2s">${carSVG(0)}</div>
       <div class="rcar l1" style="left:62%;--d:4.6s;--dl:-3.5s">${carSVG(10)}</div>
       <div class="rcar l2" style="left:30%;--d:3.6s;--dl:-.4s">${carSVG(19)}</div>
-      <div class="rcar l2" style="left:80%;--d:3.6s;--dl:-2.3s">${carSVG(28)}</div>
+      <div class="rcar l2" style="left:80%;--d:3.6s;--dl:-2.3s">${carSVG({ t:5, c:8 })}</div>
     </div>
   </header>`;
 }
@@ -1552,9 +1632,9 @@ function sOnState(d){
 }
 function sHead(){ return `<div class="sHead"><span class="dot"></span><span style="overflow-wrap:anywhere">${esc(S.name)}</span><span class="spacer"></span><span class="muted">PIN ${esc(S.code)}</span></div>`; }
 // mientras esperan, cada uno arma su carro (modelo y color)
-const CAR_COLORS = ["#e8553f","#2f8fd6","#e0a81e","#2e9e6b","#b07ad9","#f08bb4","#5fc9d6","#f3efe4"];
-const CAR_NAMES = ["De carreras","Sedán","4x4","Buseta","Escarabajo"];
-const COLOR_NAMES = ["Rojo","Azul","Amarillo","Verde","Morado","Rosado","Celeste","Blanco"];
+const CAR_COLORS = ["#e8553f","#2f8fd6","#e0a81e","#2e9e6b","#b07ad9","#f08bb4","#5fc9d6","#f3efe4","#f28c28","#aeb8cc","#a8325a","#8fd14f"];
+const CAR_NAMES = ["De carreras","Sedán","4x4","Buseta","Escarabajo","Moto deportiva","Scooter","Fórmula 1","Monster truck","Camión","Jeep","Cuadraciclo"];
+const COLOR_NAMES = ["Rojo","Azul","Amarillo","Verde","Morado","Rosado","Celeste","Blanco","Naranja","Plateado","Vino","Lima"];
 function sMyCar(){
   if(S.car) return S.car;
   const me = ((S.st && S.st.players) || []).find(p => p.name === S.name);
@@ -1667,14 +1747,15 @@ function sAnswerKey(correct, choice){
 function sRaceList(d){
   const names = (d.players||[]).map(p => p.name);
   return (d.players||[]).slice().sort((a,b) => b.total - a.total || a.name.localeCompare(b.name))
-    .map(p => ({ name:p.name, total:p.total, pts:p.pts||0, color:colorIndex(p.name, names), car:p.car }));
+    .map((p,k) => ({ name:p.name, total:p.total, pts:p.pts||0, color:colorIndex(p.name, names), car:p.car, rank:k+1 }))
+    .sort((a,b) => names.indexOf(a.name) - names.indexOf(b.name)); // carril fijo para cada uno
 }
 function sBoardView(d){
   const list = sRaceList(d), me = list.findIndex(p => p.name === S.name);
   const last = d.qn >= d.nq;
   app.innerHTML = `<div class="phone" id="boardView">${sHead()}
     <h2 style="font-size:28px;text-align:center">La carrera</h2>
-    ${me >= 0 ? `<p class="center" style="text-align:center;font-weight:800;font-size:18px">Usted va en el puesto <b style="color:var(--a2)">${me+1}°</b> de ${list.length}</p>` : ""}
+    ${me >= 0 ? `<p class="center" data-after hidden style="text-align:center;font-weight:800;font-size:18px">Usted va en el puesto <b style="color:var(--a2)">${list[me].rank}°</b> de ${list.length}</p>` : ""}
     <div class="raceWrap">${raceHTML(list, { me:S.name, scale:raceScale(list, d.qn, d.nq) })}</div>
     <p class="center muted" style="text-align:center">${last ? "¡Ya casi! Falta la llegada a la meta." : "Pregunta " + d.qn + " de " + d.nq + ". Prepárese para la siguiente."}</p></div>`;
   raceGo();
